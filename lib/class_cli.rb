@@ -1,36 +1,74 @@
+require "getopt/long"
+
 module CLI
   def self.extended(klass)
-    klass.class_eval <<-RUBY
+    klass.class_eval <<-RUBY, "class_cli.rb", 6
+    
       def self.method_added(meth)
         return if !public_instance_methods.include?(meth.to_s) || !@@usage
-        @@descriptions               = defined?(@@descriptions) ? @@descriptions : []
-        @@usages                     = defined?(@@usages) ? @@usages : []
-        @@descriptions              << [meth.to_s, @@desc]
-        @@usages                    << [meth.to_s, @@usage]
-        @@usage, @@desc              = nil    
+        @@descriptions                         = defined?(@@descriptions) ? @@descriptions : []
+        @@usages                               = defined?(@@usages) ? @@usages : []
+        @@opts                                 = defined?(@@opts) ? @@opts : []
+        @@descriptions                        << [meth.to_s, @@desc]
+        @@usages                              << [meth.to_s, @@usage]
+        if defined?(@@method_options)
+          @@opts                                << [meth.to_s, @@method_options]
+        end
+        @@usage, @@desc, @@method_options      = nil
       end
 
       def self.desc(usage, description)
         @@usage, @@desc = usage, description
       end
+      
+      def self.method_options(opts)
+        @@method_options = opts
+      end
 
       def self.start
-        new(ARGV[0], ARGV[1..-1])
+        meth = ARGV.shift
+        params = ARGV.inject([]) do |accum, arg|
+          accum << ARGV.delete(arg) unless arg =~ /^\-/
+          accum
+        end
+        if @@opts.assoc(meth)
+          opts = @@opts.assoc(meth).last.map {|opt, val| [opt, val == true ? Getopt::BOOLEAN : Getopt.const_get(val)].flatten}
+          options = Getopt::Long.getopts(*opts)
+          params << options
+        end
+        new(meth, params)
       end
 
       def initialize(op, params)
         send(op.to_sym, *params) if public_methods.include?(op)
       end
       
+      private
+      def format_opts(opts)
+        return "" unless opts
+        opts.map do |opt, val|
+          if val == true || val == "BOOLEAN"
+            opt
+          elsif val == "REQUIRED"
+            opt + "=" + opt.gsub(/\-/, "").upcase
+          elsif val == "OPTIONAL"
+            "[" + opt + "=" + opt.gsub(/\-/, "").upcase + "]"
+          end
+        end.join(" ")
+      end
+      
+      public
       desc "help", "show this screen"
       def help
         puts "Options"
         puts "-------"
         max_usage = @@usages.max {|x,y| x.last.to_s.size <=> y.last.to_s.size}.last.size
+        max_opts  = @@opts.empty? ? 0 : format_opts(@@opts.max {|x,y| x.last.to_s.size <=> y.last.to_s.size}.last).size 
         max_desc  = @@descriptions.max {|x,y| x.last.to_s.size <=> y.last.to_s.size}.last.size
         @@usages.each do |meth, usage|
-          format = "%-" + (max_usage + 3).to_s + "s"
-          print format % @@usages.assoc(meth)[1]
+          format = "%-" + (max_usage + max_opts + 4).to_s + "s"
+          print format % (@@usages.assoc(meth)[1] + (@@opts.assoc(meth) ? " " + format_opts(@@opts.assoc(meth)[1]) : ""))
+          # print format % (@@usages.assoc(meth)[1] + @@opts.assoc(meth) ? format_opts(@@opts.assoc(meth)[1]) : ""))
           puts  @@descriptions.assoc(meth)[1]      
         end
       end      

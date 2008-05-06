@@ -8,6 +8,7 @@ class TextmateInstaller
   
   desc "list [SEARCH]", "Lists all the matching remote bundles"
   def list(limit = "")
+    limit = opts["search"]
     limit = Regexp.new(".*#{limit}.*", "i")
     puts "\nBundles\n-------\n"
     results = %x[svn list #{svn_for("bundles")}]
@@ -18,7 +19,8 @@ class TextmateInstaller
   end
 
   desc "installed", "lists all the bundles installed locally"
-  def installed
+  def installed(opts)
+    p opts
     puts "\nSystem\n------\n"
     puts Dir["/Library/Application Support/TextMate/Bundles/*.tmbundle"].map {|x| x.split("/").last.split(".").first}.join("\n")
     puts "\nUser\n----\n"
