@@ -1,0 +1,72 @@
+#!/usr/bin/env ruby
+
+require "fileutils"
+require "class_cli"
+
+class TextmateInstaller
+  extend CLI
+  
+  desc "list [SEARCH]", "Lists all the matching remote bundles"
+  def list(limit = "")
+    limit = Regexp.new(".*#{limit}.*", "i")
+    puts "\nBundles\n-------\n"
+    results = %x[svn list #{svn_for("bundles")}]
+    puts results.map {|x| x.split(".")[0]}.select {|x| x =~ limit}.join("\n")
+    puts "\nReview\n------\n"
+    results = %x[svn list #{svn_for("review")}]
+    puts results.map {|x| x.split(".")[0]}.select {|x| x =~ limit}.join("\n")
+  end
+
+  desc "installed", "lists all the bundles installed locally"
+  def installed
+    puts "\nSystem\n------\n"
+    puts Dir["/Library/Application Support/TextMate/Bundles/*.tmbundle"].map {|x| x.split("/").last.split(".").first}.join("\n")
+    puts "\nUser\n----\n"
+    puts Dir["#{ENV["HOME"]}/Library/Application Support/TextMate/Bundles/*.tmbundle"].map {|x| x.split("/").last.split(".").first}.join("\n")
+  end
+  
+  desc "install NAME", "install a bundle"
+  def install(name)
+    FileUtils.mkdir_p "/Library/Application Support/TextMate/Bundles"
+    quoted_name = name.gsub(" ", "\\ ")
+    type = where(name)
+    puts "Checking out #{name}..."
+    res = %x[svn co #{svn_for(type)}/#{quoted_name}.tmbundle /Library/Application\\ Support/TextMate/Bundles/#{quoted_name}.tmbundle]
+    puts "Reloading Bundles..."
+    reload_textmate!
+    puts "Done."
+  end
+
+  desc "uninstall NAME", "uninstall a bundle"
+  def uninstall(name)
+    puts "Removing bundle..."
+    FileUtils.rm_rf("/Library/Application Support/TextMate/Bundles/#{name}.tmbundle")
+    FileUtils.rm_rf("#{ENV["HOME"]}/Library/Application Support/TextMate/Bundles/#{name}.tmbundle")    
+    puts "Reloading bundles..."
+    reload_textmate!
+    puts "Done."
+  end
+  
+  private
+  def reload_textmate!
+    %x[osascript -e 'tell app "TextMate" to reload bundles']
+  end
+
+  def where(bundle)
+    bundles = %x[svn list #{svn_for("bundles")}].map {|x| x.split(".")[0]}
+    review  = %x[svn list #{svn_for("review")}].map {|x| x.split(".")[0]}
+    return "bundles" if bundles.include?(bundle)
+    return "review"  if review.include?(bundle)
+  end
+    
+  def svn_for(type)
+    if type =~ /bundles/i
+      "http://macromates.com/svn/Bundles/trunk/Bundles"
+    elsif type =~ /review/i
+      "http://macromates.com/svn/Bundles/trunk/Review/Bundles"
+    end
+  end
+  
+end
+
+TextmateInstaller.start
