@@ -11,7 +11,7 @@ module CLI
         @@opts                                 = defined?(@@opts) ? @@opts : []
         @@descriptions                        << [meth.to_s, @@desc]
         @@usages                              << [meth.to_s, @@usage]
-        if defined?(@@method_options)
+        if defined?(@@method_options) && @@method_options
           @@opts                                << [meth.to_s, @@method_options]
         end
         @@usage, @@desc, @@method_options      = nil

@@ -8,7 +8,6 @@ class TextmateInstaller
   
   desc "list [SEARCH]", "Lists all the matching remote bundles"
   def list(limit = "")
-    limit = opts["search"]
     limit = Regexp.new(".*#{limit}.*", "i")
     puts "\nBundles\n-------\n"
     results = %x[svn list #{svn_for("bundles")}]
