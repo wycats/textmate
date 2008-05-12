@@ -2,7 +2,7 @@ require 'rubygems'
 require 'rake/gempackagetask'
 
 GEM = "textmate"
-VERSION = "0.9.0"
+GEM_VERSION = "0.9.0"
 AUTHOR = "Yehuda Katz"
 EMAIL = "wycats@gmail.com"
 HOMEPAGE = "http://yehudakatz.com"
@@ -10,7 +10,7 @@ SUMMARY = "Command-line textmate package manager"
 
 spec = Gem::Specification.new do |s|
   s.name = GEM
-  s.version = VERSION
+  s.version = GEM_VERSION
   s.platform = Gem::Platform::RUBY
   s.has_rdoc = true
   s.extra_rdoc_files = ["README.markdown", "LICENSE"]
@@ -20,9 +20,8 @@ spec = Gem::Specification.new do |s|
   s.email = EMAIL
   s.homepage = HOMEPAGE
   
-  # Uncomment this to add a dependency
-  # s.add_dependency "foo"
-  
+  s.add_dependency "thor", ">= 0.9.1"
+    
   s.require_path = 'lib'
   s.autorequire = GEM
   s.files = %w(LICENSE README.markdown Rakefile) + Dir.glob("{bin,lib,specs}/**/*")
@@ -35,5 +34,5 @@ Rake::GemPackageTask.new(spec) do |pkg|
 end
 
 task :install => [:package] do
-  sh %{sudo gem install pkg/#{GEM}-#{VERSION} --no-rdoc --no-ri}
+  sh %{sudo gem install pkg/#{GEM}-#{GEM_VERSION} --no-rdoc --no-ri}
 end

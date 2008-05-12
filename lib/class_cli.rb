@@ -1,6 +1,6 @@
 require "getopt/long"
 
-module CLI
+module Hermes
   def self.extended(klass)
     klass.class_eval <<-RUBY, "class_cli.rb", 6
     
