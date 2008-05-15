@@ -10,20 +10,20 @@ Usage
 
 Textmate bundles are automatically reloaded after install or uninstall operations.
 
-`textmate list [SEARCH]`
+`textmate remote [SEARCH]`
 ------------------------
 
 List all of the available bundles in the remote repository that have a substring `search`. By default, list all bundles.
 
-`textmate installed`
+`textmate list`
 --------------------
 
 List all of the bundles that are installed on the local system.
 
-`textmate install NAME`
+`textmate install NAME [SOURCE]`
 -----------------------
 
-Installs a bundle from the remote repository.
+Installs a bundle from the remote repository. SOURCE filters known remote bundle locations. 
 
 `textmate uninstall NAME`
 -------------------------
