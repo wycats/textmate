@@ -41,9 +41,10 @@ class TextmateInstaller < Thor
   def uninstall(name)
     puts "Removing bundle..."
     # FIXME: Move deleted bundles to the trash instead of rm_rf-ing them?
+    # When moving to the trash, maybe move the bundle into a trash/disabled_bundles subfolder 
+    #   named as the bundles_path key. Just in case there are multiple versions of 
+    #     the same bundle in multiple bundle paths
     bundles_paths.each do |location,bundles_path|
-      # When moving to the trash, maybe rename the bundle and add the bundles_path key to the name, 
-      # just in case there are multiple versions of the same bundle in multiple bundle paths
       FileUtils.rm_rf("#{bundles_path}/#{name}.tmbundle")    
     end
     puts "Reloading bundles..."
@@ -72,7 +73,8 @@ class TextmateInstaller < Thor
   end
   
   def bundles_paths
-    { :User              => "#{ENV["HOME"]}/Library/Application Support/TextMate/Bundles",
+    { :Application       => '/Applications/TextMate.app/Contents/SharedSupport/Bundles',
+      :User              => "#{ENV["HOME"]}/Library/Application Support/TextMate/Bundles",
       :System            => '/Library/Application Support/TextMate/Bundles',
       :'User Pristine'   => "#{ENV["HOME"]}/Library/Application Support/TextMate/Pristine Copy",
       :'System Pristine' => '/Library/Application Support/TextMate/Pristine Copy',
