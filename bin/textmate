@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 require "fileutils"
+require "rubygems"
 require "thor"
 
 class TextmateInstaller < Thor
@@ -15,22 +16,21 @@ class TextmateInstaller < Thor
     results = %x[svn list #{svn_for("review")}]
     puts results.map {|x| x.split(".")[0]}.select {|x| x =~ limit}.join("\n")
   end
-
+  
   desc "installed", "lists all the bundles installed locally"
   def installed()
-    puts "\nSystem\n------\n"
-    puts Dir["/Library/Application Support/TextMate/Bundles/*.tmbundle"].map {|x| x.split("/").last.split(".").first}.join("\n")
-    puts "\nUser\n----\n"
-    puts Dir["#{ENV["HOME"]}/Library/Application Support/TextMate/Bundles/*.tmbundle"].map {|x| x.split("/").last.split(".").first}.join("\n")
+    bundles_paths.each do |location,bundles_path|
+      puts location.to_s << " Bundles\n" << location.to_s.gsub(/./,'-') << '--------'
+      puts Dir["#{e_sh bundles_path}/*.tmbundle"].map {|x| x.split("/").last.split(".").first}.join("\n")
+    end
   end
   
   desc "install NAME", "install a bundle"
   def install(name)
-    FileUtils.mkdir_p "/Library/Application Support/TextMate/Bundles"
-    quoted_name = name.gsub(" ", "\\ ")
+    FileUtils.mkdir_p install_bundles_path
     type = where(name)
     puts "Checking out #{name}..."
-    res = %x[svn co #{svn_for(type)}/#{quoted_name}.tmbundle /Library/Application\\ Support/TextMate/Bundles/#{quoted_name}.tmbundle]
+    res = %x[svn co #{svn_for(type)}/#{e_sh name}.tmbundle #{e_sh install_bundles_path}/#{e_sh name}.tmbundle]
     puts "Reloading Bundles..."
     reload_textmate!
     puts "Done."
@@ -39,8 +39,12 @@ class TextmateInstaller < Thor
   desc "uninstall NAME", "uninstall a bundle"
   def uninstall(name)
     puts "Removing bundle..."
-    FileUtils.rm_rf("/Library/Application Support/TextMate/Bundles/#{name}.tmbundle")
-    FileUtils.rm_rf("#{ENV["HOME"]}/Library/Application Support/TextMate/Bundles/#{name}.tmbundle")    
+    # FIXME: Move deleted bundles to the trash instead of rm_rf-ing them?
+    bundles_paths.each do |location,bundles_path|
+      # When moving to the trash, maybe rename the bundle and add the bundles_path key to the name, 
+      # just in case there are multiple versions of the same bundle in multiple bundle paths
+      FileUtils.rm_rf("#{bundles_path}/#{name}.tmbundle")    
+    end
     puts "Reloading bundles..."
     reload_textmate!
     puts "Done."
@@ -66,6 +70,27 @@ class TextmateInstaller < Thor
     end
   end
   
+  def bundles_paths
+    { :User              => "#{ENV["HOME"]}/Library/Application Support/TextMate/Bundles",
+      :System            => '/Library/Application Support/TextMate/Bundles',
+      :'User Pristine'   => "#{ENV["HOME"]}/Library/Application Support/TextMate/Pristine Copy",
+      :'System Pristine' => '/Library/Application Support/TextMate/Pristine Copy',
+    }
+  end
+  
+  def install_bundles_path
+    #TODO: Add some way for the user to configure where they'd prefer to install bundles
+    bundles_paths[:'User Pristine']
+  end
+  
+  # Copied from http://macromates.com/svn/Bundles/trunk/Support/lib/escape.rb
+  # escape text to make it useable in a shell script as one “word” (string)
+  def e_sh(str)
+  	str.to_s.gsub(/(?=[^a-zA-Z0-9_.\/\-\x7F-\xFF\n])/, '\\').gsub(/\n/, "'\n'").sub(/^$/, "''")
+  end
+  
 end
 
 TextmateInstaller.start
+
+# FIXME: Rename methods to more closely match rubygems
