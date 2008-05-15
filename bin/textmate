@@ -6,8 +6,9 @@ require "thor"
 
 class TextmateInstaller < Thor
   
-  desc "list [SEARCH]", "Lists all the matching remote bundles"
-  def list(limit = "")
+  # CHANGED: renamed list to remote. Could there be a better name?
+  desc "remote [SEARCH]", "Lists all the matching remote bundles"
+  def remote(limit = "")
     limit = Regexp.new(".*#{limit}.*", "i")
     puts "\nBundles\n-------\n"
     results = %x[svn list #{svn_for("bundles")}]
@@ -17,8 +18,8 @@ class TextmateInstaller < Thor
     puts results.map {|x| x.split(".")[0]}.select {|x| x =~ limit}.join("\n")
   end
   
-  desc "installed", "lists all the bundles installed locally"
-  def installed()
+  desc "list", "lists all the bundles installed locally"
+  def list()
     bundles_paths.each do |location,bundles_path|
       puts location.to_s << " Bundles\n" << location.to_s.gsub(/./,'-') << '--------'
       puts Dir["#{e_sh bundles_path}/*.tmbundle"].map {|x| x.split("/").last.split(".").first}.join("\n")
@@ -92,5 +93,3 @@ class TextmateInstaller < Thor
 end
 
 TextmateInstaller.start
-
-# FIXME: Rename methods to more closely match rubygems
