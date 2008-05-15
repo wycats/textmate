@@ -10,42 +10,61 @@ class TextmateInstaller < Thor
   desc "remote [SEARCH]", "Lists all the matching remote bundles"
   def remote(limit = "")
     limit = Regexp.new(".*#{limit}.*", "i")
-    puts "\nBundles\n-------\n"
-    results = %x[svn list #{svn_for("bundles")}]
-    puts results.map {|x| x.split(".")[0]}.select {|x| x =~ limit}.join("\n")
-    puts "\nReview\n------\n"
-    results = %x[svn list #{svn_for("review")}]
-    puts results.map {|x| x.split(".")[0]}.select {|x| x =~ limit}.join("\n")
+    
+    remote_bundle_locations.each do |name,location|
+      puts "\n" << name.to_s << " Remote Bundles\n" << name.to_s.gsub(/./,'-') << '---------------'
+      
+      results = %x[svn list #{e_sh location[:url]}] if location[:scm]==:svn
+      puts results.map {|x| x.split(".")[0]}.select {|x| x =~ limit}.join("\n") if results
+      
+      puts 'git remotes not implemented yet' if location[:scm]==:git
+    end
   end
   
   desc "list", "lists all the bundles installed locally"
   def list()
-    bundles_paths.each do |location,bundles_path|
-      puts location.to_s << " Bundles\n" << location.to_s.gsub(/./,'-') << '--------'
+    local_bundle_paths.each do |name,bundles_path|
+      puts "\n" << name.to_s << " Bundles\n" << name.to_s.gsub(/./,'-') << '--------'
       puts Dir["#{e_sh bundles_path}/*.tmbundle"].map {|x| x.split("/").last.split(".").first}.join("\n")
     end
   end
   
-  desc "install NAME", "install a bundle"
-  def install(name)
+  # TODO: Add a DESTINATION option to decide where to install. Maybe make some sort of ~/.textmate-cli config file?
+  desc "install NAME [SOURCE]", "install a bundle"
+  def install(bundle_name, remote_bundle_location_name=nil)
+    # TODO: Add an option to remove all other versions of the same bundle
     FileUtils.mkdir_p install_bundles_path
-    type = where(name)
-    puts "Checking out #{name}..."
-    res = %x[svn co #{svn_for(type)}/#{e_sh name}.tmbundle #{e_sh install_bundles_path}/#{e_sh name}.tmbundle]
+    puts "Checking out #{bundle_name}..."
+    
+    # CHANGED: It's faster to just try and fail for each repo than to search them all first
+    installed=false
+    remote_bundle_locations.each do |remote_name,location|
+      next unless remote_name.to_s.downcase.include? remote_bundle_location_name.to_s.downcase if remote_bundle_location_name
+      
+      cmd = 'echo "git remotes not implemented yet"' if location[:scm]==:git
+      cmd = %[svn co #{e_sh location[:url]}/#{e_sh bundle_name}.tmbundle #{e_sh install_bundles_path}/#{e_sh bundle_name}.tmbundle 2>&1] if location[:scm]==:svn
+      res = %x{#{cmd}}
+      
+      puts cmd, res.gsub(/^/,'    ') #if verbose # TODO: Implement a verbose mode to toggle showing all the gory details
+      
+      installed=true and break if res =~ /Checked out revision|Initialized empty Git repository/
+    end
+    abort 'Not Installed' unless installed # TODO: Offer suggestions for alternate bundles with similar names. Maybe let them choose
+    
     puts "Reloading Bundles..."
     reload_textmate!
     puts "Done."
   end
 
   desc "uninstall NAME", "uninstall a bundle"
-  def uninstall(name)
+  def uninstall(bundle_name)
     puts "Removing bundle..."
     # FIXME: Move deleted bundles to the trash instead of rm_rf-ing them?
     # When moving to the trash, maybe move the bundle into a trash/disabled_bundles subfolder 
     #   named as the bundles_path key. Just in case there are multiple versions of 
     #     the same bundle in multiple bundle paths
-    bundles_paths.each do |location,bundles_path|
-      FileUtils.rm_rf("#{bundles_path}/#{name}.tmbundle")    
+    local_bundle_paths.each do |name,bundles_path|
+      FileUtils.rm_rf("#{bundles_path}/#{bundle_name}.tmbundle")    
     end
     puts "Reloading bundles..."
     reload_textmate!
@@ -56,23 +75,22 @@ class TextmateInstaller < Thor
   def reload_textmate!
     %x[osascript -e 'tell app "TextMate" to reload bundles']
   end
-
-  def where(bundle)
-    bundles = %x[svn list #{svn_for("bundles")}].map {|x| x.split(".")[0]}
-    review  = %x[svn list #{svn_for("review")}].map {|x| x.split(".")[0]}
-    return "bundles" if bundles.include?(bundle)
-    return "review"  if review.include?(bundle)
-  end
-    
-  def svn_for(type)
-    if type =~ /bundles/i
-      "http://macromates.com/svn/Bundles/trunk/Bundles"
-    elsif type =~ /review/i
-      "http://macromates.com/svn/Bundles/trunk/Review/Bundles"
-    end
+  
+  def remote_bundle_locations
+    { :'Marcomates Trunk'  => {:scm => :svn, :url => 'http://macromates.com/svn/Bundles/trunk/Bundles'},
+      :'Marcomates Review' => {:scm => :svn, :url => 'http://macromates.com/svn/Bundles/trunk/Review/Bundles'},
+      
+      # TODO: Add Git support to remote_bundle_locations. Define some sort of standard way of listing git repos, checkout how rubygems does it
+      # :'Bunch of Git Bundles' => {:scm => :git, :url => 'git://NotImplemented'},
+      
+      # TODO: Add GitHub support as a remote_bundle_location
+      #   This will require fetching the html of the search page, scanning for urls and converting them to git urls
+      # :'GitHub' => {:scm => :github, :url => 'http://github.com/search?q=tmbundle'},
+    }
+    # TODO: Add some way to add more custom remotes
   end
   
-  def bundles_paths
+  def local_bundle_paths
     { :Application       => '/Applications/TextMate.app/Contents/SharedSupport/Bundles',
       :User              => "#{ENV["HOME"]}/Library/Application Support/TextMate/Bundles",
       :System            => '/Library/Application Support/TextMate/Bundles',
@@ -83,7 +101,7 @@ class TextmateInstaller < Thor
   
   def install_bundles_path
     #TODO: Add some way for the user to configure where they'd prefer to install bundles
-    bundles_paths[:'User Pristine']
+    local_bundle_paths[:'User Pristine']
   end
   
   # Copied from http://macromates.com/svn/Bundles/trunk/Support/lib/escape.rb
@@ -93,5 +111,39 @@ class TextmateInstaller < Thor
   end
   
 end
+
+# TODO: create a "monument to personal cleverness" by class-izing everything?
+# class TextMateBundle
+#   def self.find_local(bundle_name)
+#     
+#   end
+#   
+#   def self.find_remote(bundle_name)
+#     
+#   end
+#   attr_reader :name
+#   attr_reader :location
+#   attr_reader :scm
+#   def initialize(name, location, scm)
+#     @name     = name
+#     @location = location
+#     @scm      = scm
+#   end
+#   
+#   def install!
+#     
+#   end
+#   
+#   def uninstall!
+#     
+#   end
+#   
+#   
+#   def installed?
+#     # List all the installed versions, and where they're at
+#   end
+#   
+#   # TODO: dirty? method to show if there are any deltas
+# end
 
 TextmateInstaller.start
