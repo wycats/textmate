@@ -77,8 +77,8 @@ class TextmateInstaller < Thor
   end
   
   def remote_bundle_locations
-    { :'Marcomates Trunk'  => {:scm => :svn, :url => 'http://macromates.com/svn/Bundles/trunk/Bundles'},
-      :'Marcomates Review' => {:scm => :svn, :url => 'http://macromates.com/svn/Bundles/trunk/Review/Bundles'},
+    { :'Macromates Trunk'  => {:scm => :svn, :url => 'http://macromates.com/svn/Bundles/trunk/Bundles'},
+      :'Macromates Review' => {:scm => :svn, :url => 'http://macromates.com/svn/Bundles/trunk/Review/Bundles'},
       
       # TODO: Add Git support to remote_bundle_locations. Define some sort of standard way of listing git repos, checkout how rubygems does it
       # :'Bunch of Git Bundles' => {:scm => :git, :url => 'git://NotImplemented'},
