@@ -55,7 +55,7 @@ class TextmateInstaller < Thor
     abort 'Not Installed' unless installed # TODO: Offer suggestions for alternate bundles with similar names. Maybe let them choose
     
     puts "Reloading Bundles..."
-    reload_textmate!
+    reload
     puts "Done."
   end
 
@@ -70,18 +70,19 @@ class TextmateInstaller < Thor
       FileUtils.rm_rf("#{bundles_path}/#{bundle_name}.tmbundle")    
     end
     puts "Reloading bundles..."
-    reload_textmate!
+    reload
     puts "Done."
   end
   
-  private
-  def reload_textmate!
+  desc "reload", "Reloads TextMate Bundles"
+  def reload
     %x[osascript -e 'tell app "TextMate" to reload bundles']
   end
   
+  private
   def remote_bundle_locations
-    { :'Marcomates Trunk'  => {:scm => :svn, :url => 'http://macromates.com/svn/Bundles/trunk/Bundles'},
-      :'Marcomates Review' => {:scm => :svn, :url => 'http://macromates.com/svn/Bundles/trunk/Review/Bundles'},
+    { :'Macromates Trunk'  => {:scm => :svn, :url => 'http://macromates.com/svn/Bundles/trunk/Bundles'},
+      :'Macromates Review' => {:scm => :svn, :url => 'http://macromates.com/svn/Bundles/trunk/Review/Bundles'},
       
       # TODO: Add Git support to remote_bundle_locations. Define some sort of standard way of listing git repos, checkout how rubygems does it
       # :'Bunch of Git Bundles' => {:scm => :git, :url => 'git://NotImplemented'},
