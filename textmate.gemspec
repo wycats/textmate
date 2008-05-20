@@ -13,7 +13,7 @@ Gem::Specification.new do |s|
   s.email = %q{wycats@gmail.com}
   s.executables = ["textmate"]
   s.extra_rdoc_files = ["README.markdown", "LICENSE"]
-  s.files = ["LICENSE", "README.markdown", "Rakefile", "bin/textmate", "lib/class_cli.rb"]
+  s.files = ["LICENSE", "README.markdown", "Rakefile", "bin/textmate"]
   s.has_rdoc = true
   s.homepage = %q{http://yehudakatz.com}
   s.require_paths = ["lib"]
