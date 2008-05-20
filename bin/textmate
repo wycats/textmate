@@ -21,11 +21,14 @@ class TextmateInstaller < Thor
     end
   end
   
-  desc "list", "lists all the bundles installed locally"
-  def list()
+  desc "list [SEARCH]", "lists all the bundles installed locally"
+  def list(limit = "")
+    limit = Regexp.new(".*#{limit}.*", "i")
+    
     local_bundle_paths.each do |name,bundles_path|
       puts "\n" << name.to_s << " Bundles\n" << name.to_s.gsub(/./,'-') << '--------'
-      puts Dir["#{e_sh bundles_path}/*.tmbundle"].map {|x| x.split("/").last.split(".").first}.join("\n")
+      puts Dir["#{e_sh bundles_path}/*.tmbundle"].map {|x| x.split("/").last.split(".").first}.
+        select {|x| x =~ limit}.join("\n")
     end
   end
   
