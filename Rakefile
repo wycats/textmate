@@ -3,7 +3,7 @@ require 'rake/gempackagetask'
 require 'date'
 
 GEM = "textmate"
-GEM_VERSION = "0.9.0"
+GEM_VERSION = "0.9.1"
 AUTHOR = "Yehuda Katz"
 EMAIL = "wycats@gmail.com"
 HOMEPAGE = "http://yehudakatz.com"
