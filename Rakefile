@@ -1,5 +1,6 @@
 require 'rubygems'
 require 'rake/gempackagetask'
+require 'date'
 
 GEM = "textmate"
 GEM_VERSION = "0.9.0"
@@ -31,6 +32,13 @@ end
 
 Rake::GemPackageTask.new(spec) do |pkg|
   pkg.gem_spec = spec
+end
+
+desc "make a gemspec file"
+task :make_spec do
+  File.open("#{GEM}.gemspec", "w") do |file|
+    file.puts spec.to_ruby
+  end
 end
 
 task :install => [:package] do
