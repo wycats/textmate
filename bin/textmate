@@ -101,8 +101,8 @@ class TextmateInstaller < Thor
     { :Application       => '/Applications/TextMate.app/Contents/SharedSupport/Bundles',
       :User              => "#{ENV["HOME"]}/Library/Application Support/TextMate/Bundles",
       :System            => '/Library/Application Support/TextMate/Bundles',
-      :'User Pristine'   => "#{ENV["HOME"]}/Library/Application Support/TextMate/Pristine Copy",
-      :'System Pristine' => '/Library/Application Support/TextMate/Pristine Copy',
+      :'User Pristine'   => "#{ENV["HOME"]}/Library/Application Support/TextMate/Pristine Copy/Bundles",
+      :'System Pristine' => '/Library/Application Support/TextMate/Pristine Copy/Bundles',
     }
   end
   
