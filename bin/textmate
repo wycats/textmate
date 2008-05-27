@@ -126,6 +126,15 @@ class TextmateInstaller < Thor
   	str.to_s.gsub(/(?=[^a-zA-Z0-9_.\/\-\x7F-\xFF\n])/, '\\').gsub(/\n/, "'\n'").sub(/^$/, "''")
   end
   
+  CAPITALIZATION_EXCEPTIONS = %w[tmbundle on]
+  # Convert a GitHub repo name into a "normal" TM bundle name
+  # e.g. ruby-on-rails-tmbundle => Ruby on Rails.tmbundle
+  def normalize_github_repo_name(name)
+    name = name.gsub("-", " ").split.each{|part| part.capitalize! unless CAPITALIZATION_EXCEPTIONS.include? part}.join(" ")
+    name[-9] = ?. if name =~ / tmbundle$/
+    name
+  end
+  
 end
 
 # TODO: create a "monument to personal cleverness" by class-izing everything?
