@@ -1,0 +1,9 @@
+* Show the Authors and/or Project URLs for GitHub bundles
+* Make the SOURCE param on install an option
+* Add an option to remove all other versions of the same bundle on install
+* Add a DESTINATION option to decide where to install. Maybe make some sort of ~/.textmate-cli config file?
+* Implement a verbose mode to toggle showing all the gory details
+* Offer suggestions for alternate bundles with similar names if the installation fails. Maybe let them choose?
+* Add Git support to remote_bundle_locations. Define some sort of standard way of listing git repos, checkout how rubygems does it
+* Add some way for the user to configure where they'd prefer to install bundles
+* Add some way to add more custom remotes

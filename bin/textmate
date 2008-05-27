@@ -40,10 +40,8 @@ class TextmateInstaller < Thor
     end
   end
   
-  # TODO: Add a DESTINATION option to decide where to install. Maybe make some sort of ~/.textmate-cli config file?
   desc "install NAME [SOURCE]", "install a bundle"
   def install(bundle_name, remote_bundle_location_name=nil)
-    # TODO: Add an option to remove all other versions of the same bundle
     FileUtils.mkdir_p install_bundles_path
     puts "Checking out #{bundle_name}..."
     
@@ -64,11 +62,11 @@ class TextmateInstaller < Thor
       
       res = %x{#{cmd}}
       
-      puts cmd, res.gsub(/^/,'    ') #if verbose # TODO: Implement a verbose mode to toggle showing all the gory details
+      puts cmd, res.gsub(/^/,'    ')
       
       installed=true and break if res =~ /Checked out revision|Initialized empty Git repository/
     end
-    abort 'Not Installed' unless installed # TODO: Offer suggestions for alternate bundles with similar names. Maybe let them choose
+    abort 'Not Installed' unless installed
     
     reload :verbose => true
   end
@@ -76,7 +74,6 @@ class TextmateInstaller < Thor
   desc "uninstall NAME", "uninstall a bundle"
   def uninstall(bundle_name)
     puts "Removing bundle..."
-    # FIXME: Move deleted bundles to the trash instead of rm_rf-ing them?
     # When moving to the trash, maybe move the bundle into a trash/disabled_bundles subfolder 
     #   named as the bundles_path key. Just in case there are multiple versions of 
     #     the same bundle in multiple bundle paths
@@ -103,13 +100,10 @@ class TextmateInstaller < Thor
     { :'Macromates Trunk'  => {:scm => :svn, :url => 'http://macromates.com/svn/Bundles/trunk/Bundles'},
       :'Macromates Review' => {:scm => :svn, :url => 'http://macromates.com/svn/Bundles/trunk/Review/Bundles'},
       
-      # TODO: Add Git support to remote_bundle_locations. Define some sort of standard way of listing git repos, checkout how rubygems does it
       # :'Bunch of Git Bundles' => {:scm => :git, :url => 'git://NotImplemented'},
       
-      # TODO: Add GitHub support as a remote_bundle_location
       :'GitHub' => {:scm => :github, :url => 'http://github.com/search?q=tmbundle'},
     }
-    # TODO: Add some way to add more custom remotes
   end
   
   def local_bundle_paths
@@ -122,7 +116,6 @@ class TextmateInstaller < Thor
   end
   
   def install_bundles_path
-    #TODO: Add some way for the user to configure where they'd prefer to install bundles
     local_bundle_paths[:'User Pristine']
   end
   
