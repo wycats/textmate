@@ -100,8 +100,7 @@ class TextmateInstaller < Thor
       # :'Bunch of Git Bundles' => {:scm => :git, :url => 'git://NotImplemented'},
       
       # TODO: Add GitHub support as a remote_bundle_location
-      #   This will require fetching the html of the search page, scanning for urls and converting them to git urls
-      # :'GitHub' => {:scm => :github, :url => 'http://github.com/search?q=tmbundle'},
+      :'GitHub' => {:scm => :github, :url => 'http://github.com/search?q=tmbundle'},
     }
     # TODO: Add some way to add more custom remotes
   end
