@@ -22,9 +22,7 @@ class TextmateInstaller < Thor
                 when :git
                   'git remotes not implemented yet'
                 when :github
-                  YAML.load(open('http://github.com/api/v1/yaml/search/tmbundle'))['repositories'].
-                       find_all{|result| result['name'] =~ search_term}.
-                       map{|result| normalize_github_repo_name(result['name']).split('.')[0]}
+                  find_github_bundles(search_term).map{|result| normalize_github_repo_name(result['name']).split('.').first}
                 end
       
       puts results
@@ -59,6 +57,9 @@ class TextmateInstaller < Thor
               'echo "git remotes not implemented yet"'
             when :svn
               %[svn co #{e_sh location[:url]}/#{e_sh bundle_name}.tmbundle #{e_sh install_bundles_path}/#{e_sh bundle_name}.tmbundle 2>&1]
+            when :github
+              repo = find_github_bundles(denormalize_github_repo_name(bundle_name)).first
+              %[git clone #{e_sh repo['url'].sub('http', 'git') + '.git'} #{e_sh install_bundles_path}/#{e_sh bundle_name}.tmbundle 2>&1]
             end
       
       res = %x{#{cmd}}
@@ -138,6 +139,16 @@ class TextmateInstaller < Thor
     name = name.gsub("-", " ").split.each{|part| part.capitalize! unless CAPITALIZATION_EXCEPTIONS.include? part}.join(" ")
     name[-9] = ?. if name =~ / tmbundle$/
     name
+  end
+  
+  # Does the opposite of normalize_github_repo_name
+  def denormalize_github_repo_name(name)
+    name += " tmbundle" unless name =~ / tmbundle$/
+    name.split(' ').each{|part| part.downcase!}.join(' ').gsub(' ', '-')
+  end
+  
+  def find_github_bundles(search_term)
+    YAML.load(open('http://github.com/api/v1/yaml/search/tmbundle'))['repositories'].find_all{|result| result['name'].match(search_term)}
   end
   
 end
