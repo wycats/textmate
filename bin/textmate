@@ -8,27 +8,31 @@ class TextmateInstaller < Thor
   
   # CHANGED: renamed list to remote. Could there be a better name?
   desc "remote [SEARCH]", "Lists all the matching remote bundles"
-  def remote(limit = "")
-    limit = Regexp.new(".*#{limit}.*", "i")
+  def remote(search_term = "")
+    search_term = Regexp.new(".*#{search_term}.*", "i")
     
     remote_bundle_locations.each do |name,location|
       puts "\n" << name.to_s << " Remote Bundles\n" << name.to_s.gsub(/./,'-') << '---------------'
       
-      results = %x[svn list #{e_sh location[:url]}] if location[:scm]==:svn
-      puts results.map {|x| x.split(".")[0]}.select {|x| x =~ limit}.join("\n") if results
+      results = case location[:scm]
+                when :svn
+                  %x[svn list #{e_sh location[:url]}]
+                when :git
+                  puts 'git remotes not implemented yet'
+                end
       
-      puts 'git remotes not implemented yet' if location[:scm]==:git
+      puts results.map {|x| x.split(".")[0]}.select {|x| x =~ search_term}.join("\n") if results
     end
   end
   
   desc "list [SEARCH]", "lists all the bundles installed locally"
-  def list(limit = "")
-    limit = Regexp.new(".*#{limit}.*", "i")
+  def list(search_term = "")
+    search_term = Regexp.new(".*#{search_term}.*", "i")
     
     local_bundle_paths.each do |name,bundles_path|
       puts "\n" << name.to_s << " Bundles\n" << name.to_s.gsub(/./,'-') << '--------'
       puts Dir["#{e_sh bundles_path}/*.tmbundle"].map {|x| x.split("/").last.split(".").first}.
-        select {|x| x =~ limit}.join("\n")
+        select {|x| x =~ search_term}.join("\n")
     end
   end
   
@@ -44,8 +48,13 @@ class TextmateInstaller < Thor
     remote_bundle_locations.each do |remote_name,location|
       next unless remote_name.to_s.downcase.include? remote_bundle_location_name.to_s.downcase if remote_bundle_location_name
       
-      cmd = 'echo "git remotes not implemented yet"' if location[:scm]==:git
-      cmd = %[svn co #{e_sh location[:url]}/#{e_sh bundle_name}.tmbundle #{e_sh install_bundles_path}/#{e_sh bundle_name}.tmbundle 2>&1] if location[:scm]==:svn
+      cmd = case location[:scm]
+            when :git
+              'echo "git remotes not implemented yet"'
+            when :svn
+              %[svn co #{e_sh location[:url]}/#{e_sh bundle_name}.tmbundle #{e_sh install_bundles_path}/#{e_sh bundle_name}.tmbundle 2>&1]
+            end
+      
       res = %x{#{cmd}}
       
       puts cmd, res.gsub(/^/,'    ') #if verbose # TODO: Implement a verbose mode to toggle showing all the gory details
