@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Yehuda Katz"]
   s.autorequire = %q{textmate}
-  s.date = %q{2008-05-19}
+  s.date = %q{2008-05-27}
   s.default_executable = %q{textmate}
   s.description = %q{Command-line textmate package manager}
   s.email = %q{wycats@gmail.com}
