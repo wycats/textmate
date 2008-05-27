@@ -23,7 +23,12 @@ List all of the bundles that are installed on the local system.
 `textmate install NAME [SOURCE]`
 -----------------------
 
-Installs a bundle from the remote repository. SOURCE filters known remote bundle locations. 
+Installs a bundle from the remote repository. SOURCE filters known remote bundle locations.
+
+Available remote bundle locations are:
+Macromates Trunk
+Macromates Review
+GitHub
 
 `textmate uninstall NAME`
 -------------------------
