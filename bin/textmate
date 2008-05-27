@@ -63,9 +63,7 @@ class TextmateInstaller < Thor
     end
     abort 'Not Installed' unless installed # TODO: Offer suggestions for alternate bundles with similar names. Maybe let them choose
     
-    puts "Reloading Bundles..."
-    reload
-    puts "Done."
+    reload :verbose => true
   end
 
   desc "uninstall NAME", "uninstall a bundle"
@@ -81,14 +79,16 @@ class TextmateInstaller < Thor
         %x[osascript -e 'tell application "Finder" to move the POSIX file "#{bundle_path}" to trash']
       end
     end
-    puts "Reloading bundles..."
-    reload
-    puts "Done."
+    
+    reload :verbose => true
   end
   
   desc "reload", "Reloads TextMate Bundles"
-  def reload
+  method_options :verbose => :boolean
+  def reload(opts = {})
+    puts "Reloading bundles..." if opts[:verbose]
     %x[osascript -e 'tell app "TextMate" to reload bundles']
+    puts "Done." if opts[:verbose]
   end
   
   private
