@@ -8,15 +8,21 @@ A binary that provides package management for TextMate.
 
 Textmate bundles are automatically reloaded after install or uninstall operations.
 
-## `textmate remote [SEARCH]`
+## List available remote bundles
+
+`textmate remote [SEARCH]`
 
 List all of the available bundles in the remote repository, optionally filtering by `search`.
 
-## `textmate list [SEARCH]`
+## List installed bundles
+
+`textmate list [SEARCH]`
 
 List all of the bundles that are installed on the local system, optionally filtering by `search`.
 
-## `textmate install NAME [SOURCE]`
+## Installing new bundles
+
+`textmate install NAME [SOURCE]`
 
 Installs a bundle from the remote repository. SOURCE filters known remote bundle locations.
 For example, if you want to install the "Ruby on Rails" bundle off GitHub, you'd type the following:
@@ -28,6 +34,8 @@ Available remote bundle locations are:
 * Macromates Review
 * GitHub
 
-## `textmate uninstall NAME`
+## Uninstalling bundles
+
+`textmate uninstall NAME`
 
 Uninstalls a bundle from the local repository.
