@@ -3,6 +3,8 @@
 require "fileutils"
 require "rubygems"
 require "thor"
+require "open-uri"
+require "yaml"
 
 class TextmateInstaller < Thor
   
@@ -16,12 +18,16 @@ class TextmateInstaller < Thor
       
       results = case location[:scm]
                 when :svn
-                  %x[svn list #{e_sh location[:url]}]
+                  %x[svn list #{e_sh location[:url]}].map {|x| x.split(".")[0]}.select {|x| x =~ search_term}.join("\n")
                 when :git
-                  puts 'git remotes not implemented yet'
+                  'git remotes not implemented yet'
+                when :github
+                  YAML.load(open('http://github.com/api/v1/yaml/search/tmbundle'))['repositories'].
+                       find_all{|result| result['name'] =~ search_term}.
+                       map{|result| normalize_github_repo_name(result['name']).split('.')[0]}
                 end
       
-      puts results.map {|x| x.split(".")[0]}.select {|x| x =~ search_term}.join("\n") if results
+      puts results
     end
   end
   
