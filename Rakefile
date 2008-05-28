@@ -23,9 +23,9 @@ spec = Gem::Specification.new do |s|
   
   s.add_dependency "thor", ">= 0.9.2"
     
-  s.require_path = 'lib'
+  s.require_path = 'bin' # Yes, it's a hack, but otherwise gem complains on install
   s.autorequire = GEM
-  s.files = %w(LICENSE README.markdown Rakefile) + Dir.glob("{bin,lib,specs}/**/*")
+  s.files = %w(LICENSE README.markdown Rakefile) + Dir.glob("{bin,specs}/**/*")
   s.bindir = "bin"
   s.executables = %w( textmate )
 end
