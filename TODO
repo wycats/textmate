@@ -9,3 +9,4 @@
 * Add Git support to remote_bundle_locations. Define some sort of standard way of listing git repos, checkout how rubygems does it
 * Add some way for the user to configure where they'd prefer to install bundles
 * Add some way to add more custom remotes
+* Clean up installing from GitHub

@@ -62,8 +62,35 @@ class TextmateInstaller < Thor
             when :svn
               %[svn co #{e_sh location[:url]}/#{e_sh bundle_name}.tmbundle #{e_sh install_bundles_path}/#{e_sh bundle_name}.tmbundle 2>&1]
             when :github
-              repo = find_github_bundles(denormalize_github_repo_name(bundle_name)).first
-              %[git clone #{e_sh repo['url'].sub('http', 'git') + '.git'} #{e_sh install_bundles_path}/#{e_sh bundle_name}.tmbundle 2>&1]
+              repos = find_github_bundles(denormalize_github_repo_name(bundle_name))
+              
+              # Handle possible multiple Repos with the same name
+              case repos.size
+              when 0
+                'echo "Sorry, no such bundle found"'
+              when 1
+                %[git clone #{e_sh repos.first['url'].sub('http', 'git') + '.git'} #{e_sh install_bundles_path}/#{e_sh bundle_name}.tmbundle 2>&1]
+              else
+                puts "Multiple bundles with that name found. Please choose which one you want to install:"
+                repos.each_with_index {|repo, idx|
+                  puts "%d: %s by %s" %
+                  [
+                    idx + 1,
+                    normalize_github_repo_name(repo['name']),
+                    repo['url'][/github\.com\/([a-zA-Z0-9]+)\//, 1]
+                  ]
+                }
+                print "Your choice: "
+                
+                # Since to_i defaults to 0, we have to use Integer
+                choice = Integer(STDIN.gets.chomp) rescue nil
+                until choice && (0...repos.size).include?( choice - 1 ) do
+                  print "Sorry, invalid choice. Please enter a valid number or Ctrl+C to stop: "
+                  choice = Integer(STDIN.gets.chomp) rescue nil
+                end
+                
+                %[git clone #{e_sh repos[choice - 1]['url'].sub('http', 'git') + '.git'} #{e_sh install_bundles_path}/#{e_sh bundle_name}.tmbundle 2>&1]
+              end
             end
       
       res = %x{#{cmd}}
