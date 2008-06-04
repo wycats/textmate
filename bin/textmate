@@ -22,7 +22,13 @@ class TextmateInstaller < Thor
                 when :git
                   'git remotes not implemented yet'
                 when :github
-                  find_github_bundles(search_term).map{|result| normalize_github_repo_name(result['name']).split('.').first}
+                  find_github_bundles(search_term).map {|result|
+                    "%s (by %s)" %
+                    [
+                      normalize_github_repo_name(result['name']).split('.').first,
+                      result['url'][/github\.com\/([a-zA-Z0-9]+)\//, 1] # Extract the username out of the repo URL
+                    ]
+                  }
                 end
       
       puts results

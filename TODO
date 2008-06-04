@@ -1,4 +1,5 @@
 * Add specs for, well, everything
+* Only show author names for GitHub bundles when there are more than one with the same name
 * Show the Authors and/or Project URLs for GitHub bundles
 * Make the SOURCE param on install an option
 * Add an option to remove all other versions of the same bundle on install
