@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = %q{textmate}
-  s.version = "0.9.1"
+  s.version = "0.9.2"
 
   s.specification_version = 2 if s.respond_to? :specification_version=
 
@@ -16,9 +16,9 @@ Gem::Specification.new do |s|
   s.files = ["LICENSE", "README.markdown", "Rakefile", "bin/textmate"]
   s.has_rdoc = true
   s.homepage = %q{http://yehudakatz.com}
-  s.require_paths = ["lib"]
+  s.require_paths = ["bin"]
   s.rubygems_version = %q{1.1.1}
   s.summary = %q{Command-line textmate package manager}
 
-  s.add_dependency(%q<wycats-thor>, [">= 0.9.1"])
+  s.add_dependency(%q<wycats-thor>, [">= 0.9.2"])
 end

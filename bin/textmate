@@ -3,39 +3,51 @@
 require "fileutils"
 require "rubygems"
 require "thor"
+require "open-uri"
+require "yaml"
 
 class TextmateInstaller < Thor
   
   # CHANGED: renamed list to remote. Could there be a better name?
   desc "remote [SEARCH]", "Lists all the matching remote bundles"
-  def remote(limit = "")
-    limit = Regexp.new(".*#{limit}.*", "i")
+  def remote(search_term = "")
+    search_term = Regexp.new(".*#{search_term}.*", "i")
     
     remote_bundle_locations.each do |name,location|
       puts "\n" << name.to_s << " Remote Bundles\n" << name.to_s.gsub(/./,'-') << '---------------'
       
-      results = %x[svn list #{e_sh location[:url]}] if location[:scm]==:svn
-      puts results.map {|x| x.split(".")[0]}.select {|x| x =~ limit}.join("\n") if results
+      results = case location[:scm]
+                when :svn
+                  %x[svn list #{e_sh location[:url]}].map {|x| x.split(".")[0]}.select {|x| x =~ search_term}.join("\n")
+                when :git
+                  'git remotes not implemented yet'
+                when :github
+                  find_github_bundles(search_term).map {|result|
+                    "%s (by %s)" %
+                    [
+                      normalize_github_repo_name(result['name']).split('.').first,
+                      result['url'][/github\.com\/([a-zA-Z0-9]+)\//, 1] # Extract the username out of the repo URL
+                    ]
+                  }
+                end
       
-      puts 'git remotes not implemented yet' if location[:scm]==:git
+      puts results
     end
   end
   
   desc "list [SEARCH]", "lists all the bundles installed locally"
-  def list(limit = "")
-    limit = Regexp.new(".*#{limit}.*", "i")
+  def list(search_term = "")
+    search_term = Regexp.new(".*#{search_term}.*", "i")
     
     local_bundle_paths.each do |name,bundles_path|
       puts "\n" << name.to_s << " Bundles\n" << name.to_s.gsub(/./,'-') << '--------'
       puts Dir["#{e_sh bundles_path}/*.tmbundle"].map {|x| x.split("/").last.split(".").first}.
-        select {|x| x =~ limit}.join("\n")
+        select {|x| x =~ search_term}.join("\n")
     end
   end
   
-  # TODO: Add a DESTINATION option to decide where to install. Maybe make some sort of ~/.textmate-cli config file?
   desc "install NAME [SOURCE]", "install a bundle"
   def install(bundle_name, remote_bundle_location_name=nil)
-    # TODO: Add an option to remove all other versions of the same bundle
     FileUtils.mkdir_p install_bundles_path
     puts "Checking out #{bundle_name}..."
     
@@ -44,25 +56,57 @@ class TextmateInstaller < Thor
     remote_bundle_locations.each do |remote_name,location|
       next unless remote_name.to_s.downcase.include? remote_bundle_location_name.to_s.downcase if remote_bundle_location_name
       
-      cmd = 'echo "git remotes not implemented yet"' if location[:scm]==:git
-      cmd = %[svn co #{e_sh location[:url]}/#{e_sh bundle_name}.tmbundle #{e_sh install_bundles_path}/#{e_sh bundle_name}.tmbundle 2>&1] if location[:scm]==:svn
+      cmd = case location[:scm]
+            when :git
+              'echo "git remotes not implemented yet"'
+            when :svn
+              %[svn co #{e_sh location[:url]}/#{e_sh bundle_name}.tmbundle #{e_sh install_bundles_path}/#{e_sh bundle_name}.tmbundle 2>&1]
+            when :github
+              repos = find_github_bundles(denormalize_github_repo_name(bundle_name))
+              
+              # Handle possible multiple Repos with the same name
+              case repos.size
+              when 0
+                'echo "Sorry, no such bundle found"'
+              when 1
+                %[git clone #{e_sh repos.first['url'].sub('http', 'git') + '.git'} #{e_sh install_bundles_path}/#{e_sh bundle_name}.tmbundle 2>&1]
+              else
+                puts "Multiple bundles with that name found. Please choose which one you want to install:"
+                repos.each_with_index {|repo, idx|
+                  puts "%d: %s by %s" %
+                  [
+                    idx + 1,
+                    normalize_github_repo_name(repo['name']),
+                    repo['url'][/github\.com\/([a-zA-Z0-9]+)\//, 1]
+                  ]
+                }
+                print "Your choice: "
+                
+                # Since to_i defaults to 0, we have to use Integer
+                choice = Integer(STDIN.gets.chomp) rescue nil
+                until choice && (0...repos.size).include?( choice - 1 ) do
+                  print "Sorry, invalid choice. Please enter a valid number or Ctrl+C to stop: "
+                  choice = Integer(STDIN.gets.chomp) rescue nil
+                end
+                
+                %[git clone #{e_sh repos[choice - 1]['url'].sub('http', 'git') + '.git'} #{e_sh install_bundles_path}/#{e_sh bundle_name}.tmbundle 2>&1]
+              end
+            end
+      
       res = %x{#{cmd}}
       
-      puts cmd, res.gsub(/^/,'    ') #if verbose # TODO: Implement a verbose mode to toggle showing all the gory details
+      puts cmd, res.gsub(/^/,'    ')
       
       installed=true and break if res =~ /Checked out revision|Initialized empty Git repository/
     end
-    abort 'Not Installed' unless installed # TODO: Offer suggestions for alternate bundles with similar names. Maybe let them choose
+    abort 'Not Installed' unless installed
     
-    puts "Reloading Bundles..."
-    reload
-    puts "Done."
+    reload :verbose => true
   end
 
   desc "uninstall NAME", "uninstall a bundle"
   def uninstall(bundle_name)
     puts "Removing bundle..."
-    # FIXME: Move deleted bundles to the trash instead of rm_rf-ing them?
     # When moving to the trash, maybe move the bundle into a trash/disabled_bundles subfolder 
     #   named as the bundles_path key. Just in case there are multiple versions of 
     #     the same bundle in multiple bundle paths
@@ -72,14 +116,16 @@ class TextmateInstaller < Thor
         %x[osascript -e 'tell application "Finder" to move the POSIX file "#{bundle_path}" to trash']
       end
     end
-    puts "Reloading bundles..."
-    reload
-    puts "Done."
+    
+    reload :verbose => true
   end
   
   desc "reload", "Reloads TextMate Bundles"
-  def reload
+  method_options :verbose => :boolean
+  def reload(opts = {})
+    puts "Reloading bundles..." if opts[:verbose]
     %x[osascript -e 'tell app "TextMate" to reload bundles']
+    puts "Done." if opts[:verbose]
   end
   
   private
@@ -87,14 +133,10 @@ class TextmateInstaller < Thor
     { :'Macromates Trunk'  => {:scm => :svn, :url => 'http://macromates.com/svn/Bundles/trunk/Bundles'},
       :'Macromates Review' => {:scm => :svn, :url => 'http://macromates.com/svn/Bundles/trunk/Review/Bundles'},
       
-      # TODO: Add Git support to remote_bundle_locations. Define some sort of standard way of listing git repos, checkout how rubygems does it
       # :'Bunch of Git Bundles' => {:scm => :git, :url => 'git://NotImplemented'},
       
-      # TODO: Add GitHub support as a remote_bundle_location
-      #   This will require fetching the html of the search page, scanning for urls and converting them to git urls
-      # :'GitHub' => {:scm => :github, :url => 'http://github.com/search?q=tmbundle'},
+      :'GitHub' => {:scm => :github, :url => 'http://github.com/search?q=tmbundle'},
     }
-    # TODO: Add some way to add more custom remotes
   end
   
   def local_bundle_paths
@@ -107,7 +149,6 @@ class TextmateInstaller < Thor
   end
   
   def install_bundles_path
-    #TODO: Add some way for the user to configure where they'd prefer to install bundles
     local_bundle_paths[:'User Pristine']
   end
   
@@ -115,6 +156,27 @@ class TextmateInstaller < Thor
   # escape text to make it useable in a shell script as one “word” (string)
   def e_sh(str)
   	str.to_s.gsub(/(?=[^a-zA-Z0-9_.\/\-\x7F-\xFF\n])/, '\\').gsub(/\n/, "'\n'").sub(/^$/, "''")
+  end
+  
+  CAPITALIZATION_EXCEPTIONS = %w[tmbundle on]
+  # Convert a GitHub repo name into a "normal" TM bundle name
+  # e.g. ruby-on-rails-tmbundle => Ruby on Rails.tmbundle
+  def normalize_github_repo_name(name)
+    name = name.gsub("-", " ").split.each{|part| part.capitalize! unless CAPITALIZATION_EXCEPTIONS.include? part}.join(" ")
+    name[-9] = ?. if name =~ / tmbundle$/
+    name
+  end
+  
+  # Does the opposite of normalize_github_repo_name
+  def denormalize_github_repo_name(name)
+    name += " tmbundle" unless name =~ / tmbundle$/
+    name.split(' ').each{|part| part.downcase!}.join(' ').gsub(' ', '-')
+  end
+  
+  def find_github_bundles(search_term)
+    YAML.load(open('http://github.com/api/v1/yaml/search/tmbundle'))['repositories'].
+      find_all{|result| result['name'].match(search_term)}.
+      sort{|a,b| a['name'] <=> b['name']}
   end
   
 end

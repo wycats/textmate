@@ -3,7 +3,7 @@ require 'rake/gempackagetask'
 require 'date'
 
 GEM = "textmate"
-GEM_VERSION = "0.9.1"
+GEM_VERSION = "0.9.2"
 AUTHOR = "Yehuda Katz"
 EMAIL = "wycats@gmail.com"
 HOMEPAGE = "http://yehudakatz.com"
@@ -21,11 +21,11 @@ spec = Gem::Specification.new do |s|
   s.email = EMAIL
   s.homepage = HOMEPAGE
   
-  s.add_dependency "wycats-thor", ">= 0.9.1"
+  s.add_dependency "wycats-thor", ">= 0.9.2"
     
-  s.require_path = 'lib'
+  s.require_path = 'bin' # Yes, it's a hack, but otherwise gem complains on install
   s.autorequire = GEM
-  s.files = %w(LICENSE README.markdown Rakefile) + Dir.glob("{bin,lib,specs}/**/*")
+  s.files = %w(LICENSE README.markdown Rakefile) + Dir.glob("{bin,specs}/**/*")
   s.bindir = "bin"
   s.executables = %w( textmate )
 end
