@@ -21,7 +21,7 @@ spec = Gem::Specification.new do |s|
   s.email = EMAIL
   s.homepage = HOMEPAGE
   
-  s.add_dependency "thor", ">= 0.9.1"
+  s.add_dependency "wycats-thor", ">= 0.9.1"
     
   s.require_path = 'lib'
   s.autorequire = GEM
