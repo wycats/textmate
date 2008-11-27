@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = %q{textmate}
-  s.version = "0.9.2"
+  s.version = "0.9.3"
 
   s.specification_version = 2 if s.respond_to? :specification_version=
 

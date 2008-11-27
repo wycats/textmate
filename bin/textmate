@@ -174,9 +174,17 @@ class TextmateInstaller < Thor
   end
   
   def find_github_bundles(search_term)
-    YAML.load(open('http://github.com/api/v1/yaml/search/tmbundle'))['repositories'].
-      find_all{|result| result['name'].match(search_term)}.
-      sort{|a,b| a['name'] <=> b['name']}
+    # Until GitHub fixes http://support.github.com/discussions/feature-requests/11-api-search-results,
+    # we need to account for multiple pages of results:
+    page = 1
+    repositories = YAML.load(open("http://github.com/api/v1/yaml/search/tmbundle?page=#{page}"))['repositories']
+    results = []
+    until repositories.empty?
+      results += repositories.find_all{|result| result['name'].match(search_term)}
+      page += 1
+      repositories = YAML.load(open("http://github.com/api/v1/yaml/search/tmbundle?page=#{page}"))['repositories']
+    end
+    results.sort{|a,b| a['name'] <=> b['name']}
   end
   
 end
