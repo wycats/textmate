@@ -17,7 +17,7 @@ Gem::Specification.new do |s|
   s.has_rdoc = true
   s.homepage = %q{http://yehudakatz.com}
   s.require_paths = ["bin"]
-  s.rubygems_version = %q{1.1.1}
+  s.rubygems_version >= %q{1.1.1}
   s.summary = %q{Command-line textmate package manager}
 
   s.add_dependency(%q<thor>, [">= 0.9.2"])
