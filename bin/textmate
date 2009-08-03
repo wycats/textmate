@@ -5,6 +5,7 @@ require "rubygems"
 require "thor"
 require "open-uri"
 require "yaml"
+require "cgi"
 
 class TextmateInstaller < Thor
 
@@ -63,7 +64,7 @@ class TextmateInstaller < Thor
             when :git
               'echo "git remotes not implemented yet"'
             when :svn
-              %[svn co #{e_sh location[:url]}/#{e_sh bundle_name}.tmbundle #{e_sh install_bundles_path}/#{e_sh bundle_name}.tmbundle 2>&1]
+              %[svn co "#{location[:url]}/#{url_escape bundle_name}.tmbundle" #{e_sh install_bundles_path}/#{e_sh bundle_name}.tmbundle 2>&1]
             when :github
               repos = find_github_bundles(denormalize_github_repo_name(bundle_name))
 
@@ -110,7 +111,7 @@ class TextmateInstaller < Thor
   desc "uninstall NAME", "uninstall a bundle"
   def uninstall(bundle_name)
     removed = false
-    
+
     puts "Removing bundle..."
     # When moving to the trash, maybe move the bundle into a trash/disabled_bundles subfolder
     #   named as the bundles_path key. Just in case there are multiple versions of
@@ -122,7 +123,7 @@ class TextmateInstaller < Thor
         %x[osascript -e 'tell application "Finder" to move the POSIX file "#{bundle_path}" to trash']
       end
     end
-    
+
     unless removed
       say "There is no bundle by that name in the system", :red
       exit
@@ -175,6 +176,11 @@ class TextmateInstaller < Thor
   	str.to_s.gsub(/(?=[^a-zA-Z0-9_.\/\-\x7F-\xFF\n])/, '\\').gsub(/\n/, "'\n'").sub(/^$/, "''")
   end
 
+  def url_escape(str)
+    chars = ((33...47).to_a + (94...96).to_a + (123...126).to_a).map {|c| c.chr }.join + "\\[\\]\\\\"
+    str = str.to_s.gsub(%r{[#{chars}]}) {|m| CGI.escape(m) }
+  end
+
   CAPITALIZATION_EXCEPTIONS = %w[tmbundle on]
   # Convert a GitHub repo name into a "normal" TM bundle name
   # e.g. ruby-on-rails-tmbundle => Ruby on Rails.tmbundle
@@ -207,16 +213,16 @@ class TextmateInstaller < Thor
 
   def git_clone(repo, name)
     bundle_name = normalize_github_repo_name(name)
-    
+
     path = "#{install_bundles_path}/#{bundle_name}"
-    escaped_path = "#{e_sh install_bundles_path}/#{e_sh bundle_name}"
-    
+    escaped_path = "#{e_sh(install_bundles_path)}/#{e_sh(bundle_name)}"
+
     if File.directory?(path)
       say "Sorry, that bundle is already installed. Please uninstall it first.", :red
       exit
     end
-    
-    %[git clone git://github.com/#{repo}/#{name}.git #{escaped_path} 2>&1]
+
+    %[git clone "git://github.com/#{url_escape(repo)}/#{url_escape(name)}.git" #{escaped_path} 2>&1]
   end
 
 end
