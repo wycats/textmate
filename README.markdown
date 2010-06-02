@@ -34,6 +34,12 @@ Available remote bundle locations are:
 * Macromates Review
 * GitHub
 
+## Updateing bundles
+
+`textmate update`
+
+Tries to update all installed bundles.
+
 ## Uninstalling bundles
 
 `textmate uninstall NAME`
