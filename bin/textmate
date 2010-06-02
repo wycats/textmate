@@ -173,7 +173,7 @@ class TextmateInstaller < Thor
             
             if File.exist?(git_path)
               puts "Updateing #{path}"
-              %x[git --git-dir=#{e_sh git_path} pull]
+              %x[git --git-dir=#{e_sh git_path} --work-tree=#{e_sh path}pull]
             elsif File.exist?(svn_path)
               puts "Updateing #{path}"
               %x[svn up #{e_sh path}]
