@@ -132,6 +132,33 @@ class TextmateInstaller < Thor
     end
   end
 
+  desc "update", "updates all installed bundles"
+  def update
+    local_bundle_paths.each do |name,bundles_path|
+      
+      if (File.exist?(bundles_path))
+        Dir.new(bundles_path).each{|dir|
+          path = File.join(bundles_path, dir)
+          if (![".", ".."].include?(dir) && File.directory?(path))
+            
+            svn_path = File.join(path, ".svn")
+            git_path = File.join(path, ".git")
+            
+            if File.exist?(git_path)
+              puts "Updateing #{path}"
+              %x[git --git-dir=#{e_sh git_path} pull]
+            elsif File.exist?(svn_path)
+              puts "Updateing #{path}"
+              %x[svn up #{e_sh path}]
+            end
+            
+          end
+        }
+      end
+      
+    end
+  end
+
   desc "reload", "Reloads TextMate Bundles"
   method_options :verbose => :boolean
   def reload(opts = {})
